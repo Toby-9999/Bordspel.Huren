@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Reservering Bordspellen</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background-color: #f9f9f9;
+      padding: 40px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #444;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    .readonly {
+      background-color: #f0f0f0;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Reserveer een bordspel</h2>
+    <form id="reserveringForm">
+      <label for="naam">Naam</label>
+      <input type="text" id="naam" name="naam" required>
+
+      <label for="spel">Bordspel</label>
+      <input type="text" id="spel" name="spel" required>
+
+      <label for="startDatum">Startdatum</label>
+      <input type="date" id="startDatum" name="startDatum" required>
+
+      <label for="weken">Aantal weken</label>
+      <select id="weken" name="weken" required>
+        <option value="1">1 week</option>
+        <option value="2">2 weken</option>
+        <option value="3">3 weken</option>
+        <option value="4">4 weken</option>
+      </select>
+
+      <label for="eindDatum">Einddatum</label>
+      <input type="text" id="eindDatum" class="readonly" readonly>
+
+      <button type="submit">Verstuur reservering</button>
+    </form>
+    <div class="message" id="message"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("reserveringForm");
+    const startInput = document.getElementById("startDatum");
+    const wekenInput = document.getElementById("weken");
+    const eindInput = document.getElementById("eindDatum");
+    const messageDiv = document.getElementById("message");
+
+    function updateEindDatum() {
+      const start = new Date(startInput.value);
+      const weken = parseInt(wekenInput.value);
+      if (!isNaN(start) && weken > 0) {
+        const eind = new Date(start);
+        eind.setDate(start.getDate() + weken * 7);
+        eindInput.value = eind.toLocaleDateString("nl-BE", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      } else {
+        eindInput.value = "";
+      }
+    }
+
+    startInput.addEventListener("change", updateEindDatum);
+    wekenInput.addEventListener("change", updateEindDatum);
+
+    form.addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      const formData = {
+        naam: document.getElementById("naam").value,
+        spel: document.getElementById("spel").value,
+        startDatum: document.getElementById("startDatum").value,
+        weken: document.getElementById("weken").value
+      };
+
+      const scriptURL = "https://script.google.com/macros/s/AKfycbxSXVIKgTXRKuBn80LOJ6-C9OOD3cuy_oeJXEnE1SU35qkmUziqeFIJqpOaRh8pylaExg/exec"; // <-- VERVANG DEZE URL
+
+      try {
+        const response = await fetch(scriptURL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const text = await response.text();
+        if (text === "OK") {
+          messageDiv.textContent = "✅ Reservatie verzonden!";
+          form.reset();
+          eindInput.value = "";
+        } else {
+          messageDiv.textContent = "⚠️ Fout bij verzenden: " + text;
+        }
+
+      } catch (error) {
+        messageDiv.textContent = "❌ Netwerkfout: " + error.message;
+      }
+    });
+  </script>
+</body>
+</html>
